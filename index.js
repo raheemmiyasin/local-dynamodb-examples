@@ -1,5 +1,11 @@
 const AWS = require('aws-sdk');
+const yargs = require('yargs');
 const moviedata = require('./moviedata.json');
+
+const options = yargs
+    .usage("Usage: -n <name>")
+    .option("n", { alias: "name", describe: "Function name", type: "string", demandOption: true })
+    .argv;
 
 AWS.config.update({
     region: "us-west-2",
@@ -14,7 +20,7 @@ AWS.config.update({
 
 const dynamodb = new AWS.DynamoDB();
 
-function createMovies() {
+function createTable() {
     console.log('create movies table');
     var params = {
         TableName: "Movies",
@@ -69,17 +75,17 @@ function processFile() {
 
 function createItem() {
     var params = {
-        TableName :"Movies",
-        Item:{
+        TableName: "Movies",
+        Item: {
             "year": 2015,
             "title": "The Big New Movie",
-            "info":{
+            "info": {
                 "plot": "Nothing happens at all.",
                 "rating": 0
             }
         }
     };
-    docClient.put(params, function(err, data) {
+    docClient.put(params, function (err, data) {
         if (err) {
             console.log(err);
         } else {
@@ -95,12 +101,12 @@ function readItem() {
 
     var params = {
         TableName: table,
-        Key:{
+        Key: {
             "year": year,
             "title": title
         }
     };
-    docClient.get(params, function(err, data) {
+    docClient.get(params, function (err, data) {
         if (err) {
             console.log(err);
         } else {
@@ -115,21 +121,21 @@ function updateItem() {
     var title = "The Big New Movie";
 
     var params = {
-        TableName:table,
-        Key:{
+        TableName: table,
+        Key: {
             "year": year,
             "title": title
         },
         UpdateExpression: "set info.rating = :r, info.plot=:p, info.actors=:a",
-        ExpressionAttributeValues:{
-            ":r":5.5,
-            ":p":"Everything happens all at once.",
-            ":a":["Larry", "Moe", "Curly"]
+        ExpressionAttributeValues: {
+            ":r": 5.5,
+            ":p": "Everything happens all at once.",
+            ":a": ["Larry", "Moe", "Curly"]
         },
-        ReturnValues:"UPDATED_NEW"
+        ReturnValues: "UPDATED_NEW"
     };
 
-    docClient.update(params, function(err, data) {
+    docClient.update(params, function (err, data) {
         if (err) {
             console.log(err);
         } else {
@@ -144,19 +150,19 @@ function increaseRating() {
     var title = "The Big New Movie";
 
     var params = {
-        TableName:table,
-        Key:{
+        TableName: table,
+        Key: {
             "year": year,
             "title": title
         },
         UpdateExpression: "set info.rating = info.rating + :val",
-        ExpressionAttributeValues:{
-            ":val":1
+        ExpressionAttributeValues: {
+            ":val": 1
         },
-        ReturnValues:"UPDATED_NEW"
+        ReturnValues: "UPDATED_NEW"
     };
 
-    docClient.update(params, function(err, data) {
+    docClient.update(params, function (err, data) {
         if (err) {
             console.log(err);
         } else {
@@ -171,20 +177,20 @@ function conditionalUpdate() {
     var title = "The Big New Movie";
 
     var params = {
-        TableName:table,
-        Key:{
+        TableName: table,
+        Key: {
             "year": year,
             "title": title
         },
         UpdateExpression: "remove info.actors[0]",
         ConditionExpression: "size(info.actors) >= :num",
-        ExpressionAttributeValues:{
-            ":num":3
+        ExpressionAttributeValues: {
+            ":num": 3
         },
-        ReturnValues:"UPDATED_NEW"
+        ReturnValues: "UPDATED_NEW"
     };
 
-    docClient.update(params, function(err, data) {
+    docClient.update(params, function (err, data) {
         if (err) {
             console.log(err);
         } else {
@@ -199,18 +205,18 @@ function conditionalDelete() {
     var title = "The Big New Movie";
 
     var params = {
-        TableName:table,
-        Key:{
-            "year":year,
-            "title":title
+        TableName: table,
+        Key: {
+            "year": year,
+            "title": title
         },
-        ConditionExpression:"info.rating >= :val",
+        ConditionExpression: "info.rating >= :val",
         ExpressionAttributeValues: {
             ":val": 5.0
         }
     };
 
-    docClient.delete(params, function(err, data) {
+    docClient.delete(params, function (err, data) {
         if (err) {
             console.log(err);
         } else {
@@ -223,17 +229,17 @@ function queryData() {
     console.log("Querying for movies from 1985.");
 
     var params = {
-        TableName : "Movies",
+        TableName: "Movies",
         KeyConditionExpression: "#yr = :yyyy",
-        ExpressionAttributeNames:{
+        ExpressionAttributeNames: {
             "#yr": "year"
         },
         ExpressionAttributeValues: {
-            ":yyyy":1985
+            ":yyyy": 1985
         }
     };
 
-    docClient.query(params, function(err, data) {
+    docClient.query(params, function (err, data) {
         if (err) {
             console.log(err);
         } else {
@@ -246,24 +252,24 @@ function queryData2() {
     console.log("Querying for movies from 1992 - titles A-L, with genres and lead actor: ");
 
     var params = {
-        TableName : "Movies",
-        ProjectionExpression:"#yr, title, info.genres, info.actors[0]",
+        TableName: "Movies",
+        ProjectionExpression: "#yr, title, info.genres, info.actors[0]",
         KeyConditionExpression: "#yr = :yyyy and title between :letter1 and :letter2",
-        ExpressionAttributeNames:{
+        ExpressionAttributeNames: {
             "#yr": "year"
         },
         ExpressionAttributeValues: {
-            ":yyyy":1992,
+            ":yyyy": 1992,
             ":letter1": "A",
             ":letter2": "L"
         }
     };
 
-    docClient.query(params, function(err, data) {
+    docClient.query(params, function (err, data) {
         if (err) {
             console.log(err);
-        } else {  
-             console.log(data);
+        } else {
+            console.log(data);
         }
     });
 }
@@ -292,7 +298,7 @@ function scanData() {
         } else {
             // Print all the movies
             console.log("Scan succeeded. ");
-            data.Items.forEach(function(movie) {
+            data.Items.forEach(function (movie) {
                 console.log(movie.year + ": " + movie.title + " - rating: " + movie.info.rating + "\n");
             });
 
@@ -306,27 +312,85 @@ function scanData() {
 
 function deleteMovies() {
     var params = {
-        TableName : "Movies"
+        TableName: "Movies"
     };
 
-    dynamodb.deleteTable(params, function(err, data) {
+    dynamodb.deleteTable(params, function (err, data) {
         if (err) {
             console.log(err);
-        } else {  
-             console.log(data);
+        } else {
+            console.log(data);
         }
     });
 }
 
-//createMovies();
-//processFile();
-//createItem();
-//readItem();
-//updateItem();
-//increaseRating();
-//conditionalUpdate();
-//conditionalDelete();
-//queryData();
-//queryData2();
-//scanData();
-//deleteMovies()
+function customQuery() {
+    console.log("Querying custom query");
+
+    var params = {
+        TableName: "Movies",
+        FilterExpression: "title = :title AND contains (info, :info)",
+        ExpressionAttributeValues: {
+            ":title": 'The Big New Movie',
+            ":info": {
+                "rating": 0,
+                "plot": "Nothing happens at all."
+            }
+        }
+    };
+    
+
+    docClient.query(params, function (err, data) {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log(data);
+        }
+    });
+}
+
+const greeting = `Running, ${options.name}!`;
+console.log(greeting);
+
+switch (options.name) {
+    case 'createTable':
+        createTable();
+        break;
+    case 'processFile':
+        processFile();
+        break;
+    case 'createItem':
+        createItem();
+        break;
+    case 'readItem':
+        readItem();
+        break;
+    case 'updateItem':
+        updateItem();
+        break;
+    case 'increaseRating':
+        increaseRating();
+        break;
+    case 'conditionalUpdate':
+        conditionalUpdate();
+        break;
+    case 'conditionalDelete':
+        conditionalDelete();
+        break;
+    case 'queryData':
+        queryData();
+        break;
+    case 'queryData2':
+        queryData2();
+        break;
+    case 'scanData':
+        scanData();
+        break;
+    case 'deleteMovies':
+        deleteMovies();
+        break;
+    default:
+        customQuery();
+        //console.log(`Function, ${options.name}! not found!`);
+        break;
+}
